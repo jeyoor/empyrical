@@ -152,25 +152,6 @@ class TestStats(TestCase):
                 4)
 
     @parameterized.expand([
-        ([mixed_returns, negative_returns], 0, [
-            [0.0, 0.01, 0.111, 0.066559, 0.08789, 0.12052, 0.14293,
-                0.15436, 0.03893],
-            [0.0, -0.06, -0.1258, -0.13454, -0.21243, -0.22818, -0.27449,
-                -0.33253, -0.36590]])
-    ])
-    def test_cum_returns_2d(self, returns, starting_value, expected):
-        cum_returns = self.empyrical.cum_returns(
-            returns,
-            starting_value=starting_value,
-        )
-        for h in range(len(returns)):
-            for i in range(returns[h].size):
-                assert_almost_equal(
-                    cum_returns[h][i],
-                    expected[h][i],
-                    4)
-
-    @parameterized.expand([
         (empty_returns, 0, np.nan),
         (one_return, 0, one_return[0]),
         (mixed_returns, 0, 0.03893),
