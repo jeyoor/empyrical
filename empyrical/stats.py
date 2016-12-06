@@ -1087,7 +1087,29 @@ def cagr(returns, period=DAILY, annualization=None):
     return ending_value ** (1. / no_years) - 1
 
 def integer_true(returns, period=DAILY, annualization=None):
-    pass
+    """
+    Compute integer true (returns 1)
+
+    Parameters
+    ----------
+    returns : pd.Series or np.ndarray
+        Always contains all 1s
+    period : str, optional
+        Defines the periodicity of the 'returns' data. Value ignored if `annualization` parameter is specified.
+        Defaults are:
+            'monthly':12
+            'weekly': 52
+            'daily': 252
+    annualization : int, optional
+        Used to suppress default values available in `period` 
+
+    Returns
+    -------
+    float, np.nan
+        The CAGR value.
+
+    """
+    return 1.0
 
 SIMPLE_STAT_FUNCS = [
     cum_returns_final,
@@ -1103,7 +1125,7 @@ SIMPLE_STAT_FUNCS = [
     stats.kurtosis,
     tail_ratio,
     cagr,
-    binary_true
+    integer_true
 ]
 
 FACTOR_STAT_FUNCS = [
