@@ -989,6 +989,23 @@ class TestStats(TestCase):
             noisy_cagr_2,
             1)
 
+
+    @parameterized.expand([
+        (empty_returns, "daily", 1),
+        (one_return, "daily", 1),
+        (mixed_returns, "daily", 1),
+        (flat_line_1_tz, "daily", 1),
+        (pd.Series(np.array(
+            [3., 3., 3.])/100,
+            index=pd.date_range('2000-1-30', periods=3, freq='A')
+        ), 'yearly', 1)
+    ])
+    def test_integer_true(self, returns, period, expected):
+        assert_almost_equal(
+            self.empyrical.integer_true(returns, period=period),
+            expected,
+            DECIMAL_PLACES)
+
     @property
     def empyrical(self):
         """

@@ -1086,6 +1086,8 @@ def cagr(returns, period=DAILY, annualization=None):
 
     return ending_value ** (1. / no_years) - 1
 
+def integer_true(returns, period=DAILY, annualization=None):
+    pass
 
 SIMPLE_STAT_FUNCS = [
     cum_returns_final,
@@ -1100,7 +1102,8 @@ SIMPLE_STAT_FUNCS = [
     stats.skew,
     stats.kurtosis,
     tail_ratio,
-    cagr
+    cagr,
+    binary_true
 ]
 
 FACTOR_STAT_FUNCS = [
