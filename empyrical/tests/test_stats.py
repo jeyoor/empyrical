@@ -989,10 +989,12 @@ class TestStats(TestCase):
             noisy_cagr_2,
             1)
 
-    #regression test for beta_fragility_heuristic
+    #regression tests for beta_fragility_heuristic
     @parameterized.expand([
         (one_return, one_return, np.nan),
-         (positive_returns, simple_benchmark, 0.0),
+        (positive_returns, simple_benchmark, 0.0),
+        (mixed_returns, simple_benchmark, 0.09),
+        (negative_returns, simple_benchmark, -0.029999999999999999),
     ])
     def test_beta_fragility_heuristic(self, returns, factor_returns, expected):
         assert_almost_equal(

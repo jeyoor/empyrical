@@ -1088,7 +1088,9 @@ def cagr(returns, period=DAILY, annualization=None):
 
 def beta_fragility_heuristic(returns, factor_returns):
     """
-    Estimate fragility to drops in beta
+    Estimate fragility to drops in beta.
+    A negative return value indicates potential losses could follow volatility in beta.
+    The magnitude of the negative value indicates the size of the potential loss.
 
     seealso::
     
