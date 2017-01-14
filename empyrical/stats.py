@@ -1086,30 +1086,56 @@ def cagr(returns, period=DAILY, annualization=None):
 
     return ending_value ** (1. / no_years) - 1
 
-def integer_true(returns, period=DAILY, annualization=None):
+def beta_fragility_heuristic(returns, factor_returns, risk_free=0, period=DAILY, annualization=None):
     """
-    Compute integer true (returns 1)
+    Estimate fragility to drops in beta
+
+    seealso::
+    
+    `A New Heuristic Measure of Fragility and
+Tail Risks: Application to Stress Testing <https://www.imf.org/external/pubs/ft/wp/2012/wp12216.pdf>`
+        An IMF Working Paper describing the heuristic
+
+    If they are pd.Series, expects returns and factor_returns have already
+    been aligned on their labels.  If np.ndarray, these arguments should have
+    the same shape.
 
     Parameters
     ----------
     returns : pd.Series or np.ndarray
-        Always contains all 1s
+        Daily returns of the strategy, noncumulative.
+        - See full explanation in :func:`~empyrical.stats.cum_returns`.
+    factor_returns : pd.Series or np.ndarray
+         Daily noncumulative returns of the factor to which beta is
+         computed. Usually a benchmark such as the market.
+         - This is in the same style as returns.
+    risk_free : int, float, optional
+        Constant risk-free return throughout the period. For example, the
+        interest rate on a three month us treasury bill.
     period : str, optional
-        Defines the periodicity of the 'returns' data. Value ignored if `annualization` parameter is specified.
+        Defines the periodicity of the 'returns' data for purposes of
+        annualizing. Value ignored if `annualization` parameter is specified.
         Defaults are:
             'monthly':12
             'weekly': 52
             'daily': 252
     annualization : int, optional
-        Used to suppress default values available in `period` 
+        Used to suppress default values available in `period` to convert
+        returns into annual returns. Value should be the annual frequency of
+        `returns`.
 
     Returns
     -------
     float, np.nan
-        The CAGR value.
+        The beta fragility of the strategy.
 
     """
-    return 1.0
+    if len(returns) < 2 or len(factor_returns) < 2:
+        return np.nan, np.nan
+
+    return beta_fragility_aligned(*_aligned_series(returns, factor_returns),
+                              risk_free=risk_free, period=period,
+                              annualization=annualization)
 
 SIMPLE_STAT_FUNCS = [
     cum_returns_final,
