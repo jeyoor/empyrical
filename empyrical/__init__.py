@@ -40,7 +40,7 @@ from .stats import (
     stability_of_timeseries,
     tail_ratio,
     cagr,
-    integer_true,
+    beta_fragility_heuristic,
     DAILY,
     WEEKLY,
     MONTHLY,

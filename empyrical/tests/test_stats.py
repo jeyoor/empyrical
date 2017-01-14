@@ -989,20 +989,20 @@ class TestStats(TestCase):
             noisy_cagr_2,
             1)
 
-
+    #regression test for beta_fragility_heuristic
     @parameterized.expand([
-        (empty_returns, "daily", 1),
-        (one_return, "daily", 1),
-        (mixed_returns, "daily", 1),
-        (flat_line_1_tz, "daily", 1),
         (pd.Series(np.array(
-            [3., 3., 3.])/100,
-            index=pd.date_range('2000-1-30', periods=3, freq='A')
-        ), 'yearly', 1)
+            [3., 3.])/100,
+            index=pd.date_range('2000-1-30', periods=2, freq='A')
+        ),
+         pd.Series(np.array(
+            [3., 3.])/100,
+            index=pd.date_range('2000-1-30', periods=2, freq='A')
+        ), np.nan),
     ])
-    def test_integer_true(self, returns, period, expected):
+    def test_beta_fragility_heuristic(self, returns, factor_returns, expected):
         assert_almost_equal(
-            self.empyrical.integer_true(returns, period=period),
+            self.empyrical.beta_fragility_heuristic(returns, factor_returns),
             expected,
             DECIMAL_PLACES)
 
