@@ -1155,9 +1155,11 @@ Tail Risks: Application to Stress Testing <https://www.imf.org/external/pubs/ft/
     factor_returns_series = pd.Series(factor_returns)
     pairs = pd.concat([returns_series, factor_returns_series], axis=1)
     pairs.columns = ['returns', 'factor_returns']
-    
+   
+    #exclude any rows where returns are nan 
+    pairs = pairs.dropna()
     #sort by beta
-    pairs.sort_values(by='factor_returns')
+    pairs = pairs.sort_values(by='factor_returns')
     
     #find the three vectors, using median of 3
     start_index = 0
@@ -1167,10 +1169,15 @@ Tail Risks: Application to Stress Testing <https://www.imf.org/external/pubs/ft/
     (start_returns, start_factor_returns) = pairs.iloc[start_index]
     (mid_returns, mid_factor_returns) = pairs.iloc[mid_index]
     (end_returns, end_factor_returns) = pairs.iloc[end_index]
-    
+
+    factor_returns_range = (end_factor_returns - start_factor_returns)
+    start_returns_weight = 0.5
+    end_returns_weight = 0.5
+     
     #find weights for the start and end returns using a convex combination
-    start_returns_weight =  (mid_factor_returns - start_factor_returns) / (end_factor_returns - start_factor_returns)
-    end_returns_weight = (end_factor_returns - mid_factor_returns) / (end_factor_returns - start_factor_returns)
+    if not factor_returns_range == 0:
+        start_returns_weight =  (mid_factor_returns - start_factor_returns) / factor_returns_range
+        end_returns_weight = (end_factor_returns - mid_factor_returns) / factor_returns_range
     
     #calculate fragility heuristic
     heuristic =  (start_returns_weight*start_returns) + (end_returns_weight*end_returns) - mid_returns

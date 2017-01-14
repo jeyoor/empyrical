@@ -41,6 +41,7 @@ from .stats import (
     tail_ratio,
     cagr,
     beta_fragility_heuristic,
+    beta_fragility_heuristic_aligned,
     DAILY,
     WEEKLY,
     MONTHLY,

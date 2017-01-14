@@ -991,14 +991,8 @@ class TestStats(TestCase):
 
     #regression test for beta_fragility_heuristic
     @parameterized.expand([
-        (pd.Series(np.array(
-            [3., 3.])/100,
-            index=pd.date_range('2000-1-30', periods=2, freq='A')
-        ),
-         pd.Series(np.array(
-            [3., 3.])/100,
-            index=pd.date_range('2000-1-30', periods=2, freq='A')
-        ), np.nan),
+        (one_return, one_return, np.nan),
+         (positive_returns, simple_benchmark, 0.0),
     ])
     def test_beta_fragility_heuristic(self, returns, factor_returns, expected):
         assert_almost_equal(
@@ -1198,7 +1192,7 @@ class PassArraysEmpyricalProxy(ConvertPandasEmpyricalProxy):
         )
 
     def __getattr__(self, item):
-        if item in ('alpha', 'beta', 'alpha_beta'):
+        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic'):
             item += '_aligned'
 
         return super(PassArraysEmpyricalProxy, self).__getattr__(item)
