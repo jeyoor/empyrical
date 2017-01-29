@@ -45,9 +45,19 @@ def gpd_loglikelihood_scale_and_shape_factory(price_data):
 
 def gpd_loglikelihood_scale_and_shape(n, scale, shape, price_data):
     """
+    Helper for performing GPD calculations with only scale
+    n : int
+        number of data items
+    scale : float
+        scale parameter to be used in the GPD calculation
+    price_data : ndarray
+        array of price data
     """
-
-(-(n * np.log(params[0]))-(((1 / params[1]) + 1) * (np.log((params[1] / params[0] * price_data) + 1)).sum()))
+    result = -1 * sys.float_info.max
+    if (scale != 0):
+        param_factor = shape / scale
+        if (shape != 0 and param_factor >= 0 and scale >= 0):
+            result = ((-n * np.log(scale))-(((1 / shape) + 1) * (np.log((shape / scale * price_data) + 1)).sum()))
     return result
 
 def gpd_loglikelihood_scale_only_factory(price_data):
@@ -70,11 +80,17 @@ def gpd_loglikelihood_scale_only_factory(price_data):
 
 def gpd_loglikelihood_scale_only(n, scale, data_sum):
     """
-    Helper for performing the calculation required for the lambda
+    Helper for performing GPD calculations with only scale
+    n : int
+        number of data items
+    scale : float
+        scale parameter to be used in the GPD calculation
+    data_sum : float
+        sum of data items
     """
     result = -1 * sys.float_info.max
-    if (scale > 0):
-        result = ((-n * np.log(scale)) - (data_sum / scale))
+    if (scale >= 0):
+        result = ((-n*np.log(scale)) - (data_sum/scale))
     return result
 
 test_data_array = [0.03, 0.04, 0.05, 0.07, 0.2, 0.21, 0.22, 0.3,0.35]
