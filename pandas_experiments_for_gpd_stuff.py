@@ -1,9 +1,26 @@
 #!/bin/python
+import sys
 import numpy as np
 import scipy.optimize as op
 
+#TODO: write wrapper methods
+#Wrapper1 -> take ONLY NEGATIVE PRICE DATA.
+#Wrapper2 -> Invert the sign of the negative price data
+#Wrapper3 -> minimize both functions with piecewise hey yaz.
 
-def gpd_loglikelihood_scale_and_shape(scale, shape, price_data):
+def create_gpd_loglikelihood_lambda(price_data):
+    """
+    Return a method to be maximized by scipy over the given dataset
+    Requires an array of data to use for the loglikehood calculation
+
+    Parameters
+    ----------
+    price_data : pd.Series or np.ndarray
+    """
+    #TODO: finish implementation here
+    return lambda scale, shape : np.piecewise
+
+def gpd_loglikelihood_scale_and_shape_factory(price_data):
     """
     Return a method that calculates the loglikelihood of the GPD given the data set, a scale parameter (\\sigma), and a shape parameter (\\xi)
 
@@ -19,12 +36,21 @@ def gpd_loglikelihood_scale_and_shape(scale, shape, price_data):
         This data is used for maximizing the loglikelihood
     """
     n = len(price_data)
+    #minimize a function of two variables requires a list of params
+    #we are expecting the lambda below to be called as follows:
+    #parameters = [scale, shape]
     #the final outer negative is added because scipy only minimizes, not maximizes
     #TODO: simplify this lambda with helper methods
-    return lambda scale, shape: - (-(n * np.log(scale))-(((1 / shape) + 1) * (np.log((shape / scale * price_data) + 1)).sum()))
+    return lambda params: -gpd_loglikelihood_scale_and_shape(n, params[0], params[1], price_data) 
 
+def gpd_loglikelihood_scale_and_shape(n, scale, shape, price_data):
+    """
+    """
 
-def gpd_loglikelihood_scale_only(scale, price_data):
+(-(n * np.log(params[0]))-(((1 / params[1]) + 1) * (np.log((params[1] / params[0] * price_data) + 1)).sum()))
+    return result
+
+def gpd_loglikelihood_scale_only_factory(price_data):
     """
     Return a method that calculates the loglikelihood of the GPD given the data set and a scale parameter (\\sigma)
 
@@ -39,24 +65,25 @@ def gpd_loglikelihood_scale_only(scale, price_data):
     """
     n = len(price_data)
     data_sum = price_data.sum()
-    #the final outer negative is added because scipy only minimizes, not maximizes
-    return lambda scale: - (- (n * np.log(scale)) - (data_sum / scale))
+    #the negative is added because scipy only minimizes and we want to maximize
+    return lambda scale: -gpd_loglikelihood_scale_only(n, scale, data_sum) 
 
-def create_gpd_loglikelihood_lambda(price_data):
+def gpd_loglikelihood_scale_only(n, scale, data_sum):
     """
-    Return a method to be maximized by scipy over the given dataset
-    Requires an array of data to use for the loglikehood calculation
-
-    Parameters
-    ----------
-    price_data : pd.Series or np.ndarray
+    Helper for performing the calculation required for the lambda
     """
-    return lambda scale, shape : np.piecewise
+    result = -1 * sys.float_info.max
+    if (scale > 0):
+        result = ((-n * np.log(scale)) - (data_sum / scale))
+    return result
 
-test_scale_only = gpd_loglikelihood_scale_only(3, np.array([-0.05,-0.2,-0.22,-0.3,-0.35]))
-test_scale_and_shape = gpd_loglikelihood_scale_and_shape(2, 3, np.array([-0.05,-0.2,-0.22,-0.3,-0.35]))
+test_data_array = [0.03, 0.04, 0.05, 0.07, 0.2, 0.21, 0.22, 0.3,0.35]
+test_scale_only = gpd_loglikelihood_scale_only_factory(np.array(test_data_array))
+test_scale_and_shape = gpd_loglikelihood_scale_and_shape_factory(np.array(test_data_array))
 
 #TODO: learn how to avoid precision loss?
-optimized_scale_only = op.minimize(test_scale_only, 10)
-#TODO: learn how to minimize two-valued function!!!
-optmized_scale_and_shape = op.minimize(test_scale_and_shape, [10, 5])
+optimized_scale_only = op.minimize(test_scale_only, 1)
+optimized_scale_and_shape = op.minimize(test_scale_and_shape, [1, 1])
+
+print(optimized_scale_only)
+print(optimized_scale_and_shape)
