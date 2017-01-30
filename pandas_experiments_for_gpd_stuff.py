@@ -8,7 +8,7 @@ import scipy.optimize as op
 #Wrapper2 -> Invert the sign of the negative price data
 #Wrapper3 -> minimize both functions with piecewise hey yaz.
 
-def create_gpd_loglikelihood_lambda(price_data):
+def gpd_loglikelihood_factory(price_data):
     """
     Return a method to be maximized by scipy over the given dataset
     Requires an array of data to use for the loglikehood calculation
@@ -17,8 +17,15 @@ def create_gpd_loglikelihood_lambda(price_data):
     ----------
     price_data : pd.Series or np.ndarray
     """
-    #TODO: finish implementation here
-    return lambda scale, shape : np.piecewise
+    return lambda params: gpd_loglikelihood(params, price_data)
+
+def gpd_loglikelihood(params, price_data):
+
+#TODO: implement helpers below (I don't think we need factories at all?
+
+    return np.piecewise(params, [params[1] != 0, params[1] == 0], [gpd_loglikelihood_scale_and_shape(params, price_data), gpd_loglikelihood_scale_only(params, price_data)] )
+
+
 
 def gpd_loglikelihood_scale_and_shape_factory(price_data):
     """
@@ -45,7 +52,7 @@ def gpd_loglikelihood_scale_and_shape_factory(price_data):
 
 def gpd_loglikelihood_scale_and_shape(n, scale, shape, price_data):
     """
-    Helper for performing GPD calculations with only scale
+    Helper for performing GPD calculations with scale and shape
     n : int
         number of data items
     scale : float
