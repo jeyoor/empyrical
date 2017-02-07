@@ -5,10 +5,51 @@ import numpy as np
 import pandas as pd
 import scipy.optimize as op
 
+# Simple benchmark, no drawdown
+simple_benchmark = pd.Series(
+    np.array([0., 1., 0., 1., 0., 1., 0., 1., 0.]) / 100,
+    index=pd.date_range('2000-1-30', periods=9, freq='D'))
+
+# All positive returns, small variance
+positive_returns = pd.Series(
+    np.array([1., 2., 1., 1., 1., 1., 1., 1., 1.]) / 100,
+    index=pd.date_range('2000-1-30', periods=9, freq='D'))
+
+# All negative returns
+negative_returns = pd.Series(
+    np.array([0., -6., -7., -1., -9., -2., -6., -8., -5.]) / 100,
+    index=pd.date_range('2000-1-30', periods=9, freq='D'))
+
 # Positive and negative returns with max drawdown
 mixed_returns = pd.Series(
     np.array([np.nan, 1., 10., -4., 2., 3., 2., 1., -10.]) / 100,
     index=pd.date_range('2000-1-30', periods=9, freq='D'))
+
+# Flat line
+flat_line_1 = pd.Series(
+    np.array([1., 1., 1., 1., 1., 1., 1., 1., 1.]) / 100,
+    index=pd.date_range('2000-1-30', periods=9, freq='D'))
+
+# Weekly returns
+weekly_returns = pd.Series(
+    np.array([0., 1., 10., -4., 2., 3., 2., 1., -10.])/100,
+    index=pd.date_range('2000-1-30', periods=9, freq='W'))
+
+# Monthly returns
+monthly_returns = pd.Series(
+    np.array([0., 1., 10., -4., 2., 3., 2., 1., -10.])/100,
+    index=pd.date_range('2000-1-30', periods=9, freq='M'))
+
+# Series of length 1
+one_return = pd.Series(
+    np.array([1.])/100,
+    index=pd.date_range('2000-1-30', periods=1, freq='D'))
+
+# Empty series
+empty_returns = pd.Series(
+    np.array([])/100,
+    index=pd.date_range('2000-1-30', periods=0, freq='D'))
+
 
 def gpd_var_estimator_aligned(returns):
     DEFAULT_THRESHOLD = 0.2
@@ -33,7 +74,7 @@ def gpd_var_estimator_aligned(returns):
                 finished = True
         threshold = threshold / 2
         #DEBUG
-        print('threshold:{} iteration_returns:{} param_result:{} scale_param:{} shape_param:{} finished:{}'.format(threshold, iteration_returns, param_result, scale_param, shape_param, finished))
+        #print('threshold:{} iteration_returns:{} param_result:{} scale_param:{} shape_param:{} finished:{}'.format(threshold, iteration_returns, param_result, scale_param, shape_param, finished))
     if (finished):
         var_estimate = gpd_var_calculator(threshold, scale_param, shape_param, VAR_P, len(returns_array), len(iteration_returns)) 
         es_estimate = gpd_es_calculator(var_estimate, threshold, scale_param, shape_param)
@@ -42,28 +83,29 @@ def gpd_var_estimator_aligned(returns):
 
 def gpd_es_calculator(var_estimate, threshold, scale_param, shape_param):
     result = 0
-    if ((1 - shape_param) > 0):
-        (var_estimate/(1-shape_param))+((scale_param-(shape_param*threshold))/(1-shape_param))
+    if ((1 - shape_param) != 0):
+        result = (var_estimate/(1-shape_param))+((scale_param-(shape_param*threshold))/(1-shape_param))
     return result
 
 def gpd_var_calculator(threshold, scale_param, shape_param, probability, total_n, exceedance_n):
     result = 0
     if (exceedance_n > 0 and shape_param > 0):
-        result = threshold+((scale_param/shape_param)*(math.pow((total_n/exceedance_n)*p, -shape_param)-1))
+        result = threshold+((scale_param/shape_param)*(math.pow((total_n/exceedance_n)*probability, -shape_param)-1))
     return result
 
 def gpd_loglikelihood_minimizer_aligned(price_data):
     result = [False, False]
     DEFAULT_SCALE_PARAM = 1
     DEFAULT_SHAPE_PARAM = 1
-    gpd_loglikelihood_lambda = gpd_loglikelihood_factory(price_data)
-    optimization_results = op.minimize(gpd_loglikelihood_factory(price_data), [DEFAULT_SCALE_PARAM, DEFAULT_SHAPE_PARAM], method='Nelder-Mead')
-    if optimization_results.success:
-        #TODO: handle success here
-        resulting_params = optimization_results.x
-        if len(resulting_params) == 2:
-            result[0] = resulting_params[0]
-            result[1] = resulting_params[1]
+    if (len(price_data) > 0):
+        gpd_loglikelihood_lambda = gpd_loglikelihood_factory(price_data)
+        optimization_results = op.minimize(gpd_loglikelihood_lambda, [DEFAULT_SCALE_PARAM, DEFAULT_SHAPE_PARAM], method='Nelder-Mead')
+        if optimization_results.success:
+            #TODO: handle success here
+            resulting_params = optimization_results.x
+            if len(resulting_params) == 2:
+                result[0] = resulting_params[0]
+                result[1] = resulting_params[1]
     return result
 
 def gpd_loglikelihood_factory(price_data):
@@ -176,4 +218,12 @@ print(optimized_scale_only)
 print(optimized_scale_and_shape)
 print(optimized_both)
 
-print(gpd_var_estimator_aligned(mixed_returns))
+print('Simple:',gpd_var_estimator_aligned(simple_benchmark))
+print('Positive:',gpd_var_estimator_aligned(positive_returns))
+print('Negative:',gpd_var_estimator_aligned(negative_returns))
+print('Mixed:',gpd_var_estimator_aligned(mixed_returns))
+print('Flat Line 1:',gpd_var_estimator_aligned(flat_line_1))
+print('Weekly:',gpd_var_estimator_aligned(weekly_returns))
+print('Monthly:',gpd_var_estimator_aligned(monthly_returns))
+print('One return:',gpd_var_estimator_aligned(one_return))
+print('Empty returns:',gpd_var_estimator_aligned(empty_returns))
