@@ -1,5 +1,6 @@
 #!/bin/python
 import sys
+import math
 import numpy as np
 import pandas as pd
 import scipy.optimize as op
@@ -11,27 +12,59 @@ mixed_returns = pd.Series(
 
 def gpd_var_estimator_aligned(returns):
     DEFAULT_THRESHOLD = 0.2
+    MINIMUM_THRESHOLD = 0.000000001
+    VAR_P = 0.01
     returns_array = pd.Series(returns).as_matrix()
     flipped_returns = -1*returns_array
+    filtered_returns = flipped_returns[flipped_returns>0]
     threshold = DEFAULT_THRESHOLD
-    while threshold > 0.001: #TODO: put other flags here
-        #TODO: implement stuff here, call gpd maxer, etc
+    finished = False
+    scale_param = 0
+    shape_param = 0
+    result = [0, 0, 0, 0]
+    while not finished and threshold > MINIMUM_THRESHOLD:
+        iteration_returns = filtered_returns[filtered_returns>=threshold]
+        param_result = gpd_loglikelihood_minimizer_aligned(iteration_returns)
+        if (param_result[0] != False and param_result[1] != False):
+            scale_param = param_result[0]
+            shape_param = param_result[1]
+            #non-negative shape parameter is required for fat tails
+            if (shape_param > 0):
+                finished = True
         threshold = threshold / 2
+        #DEBUG
+        print('threshold:{} iteration_returns:{} param_result:{} scale_param:{} shape_param:{} finished:{}'.format(threshold, iteration_returns, param_result, scale_param, shape_param, finished))
+    if (finished):
+        var_estimate = gpd_var_calculator(threshold, scale_param, shape_param, VAR_P, len(returns_array), len(iteration_returns)) 
+        es_estimate = gpd_es_calculator(var_estimate, threshold, scale_param, shape_param)
+        result = [threshold, scale_param, shape_param, var_estimate, es_estimate]
+    return result
+
+def gpd_es_calculator(var_estimate, threshold, scale_param, shape_param):
+    result = 0
+    if ((1 - shape_param) > 0):
+        (var_estimate/(1-shape_param))+((scale_param-(shape_param*threshold))/(1-shape_param))
+    return result
+
+def gpd_var_calculator(threshold, scale_param, shape_param, probability, total_n, exceedance_n):
+    result = 0
+    if (exceedance_n > 0 and shape_param > 0):
+        result = threshold+((scale_param/shape_param)*(math.pow((total_n/exceedance_n)*p, -shape_param)-1))
+    return result
 
 def gpd_loglikelihood_minimizer_aligned(price_data):
+    result = [False, False]
     DEFAULT_SCALE_PARAM = 1
     DEFAULT_SHAPE_PARAM = 1
     gpd_loglikelihood_lambda = gpd_loglikelihood_factory(price_data)
-    optimization_results = op.minimize(test_both, [DEFAULT_SCALE_PARAM, DEFAULT_SHAPE_PARAM], method='Nelder-Mead')
+    optimization_results = op.minimize(gpd_loglikelihood_factory(price_data), [DEFAULT_SCALE_PARAM, DEFAULT_SHAPE_PARAM], method='Nelder-Mead')
     if optimization_results.success:
         #TODO: handle success here
         resulting_params = optimization_results.x
         if len(resulting_params) == 2:
-            scale_param = resulting_params[0]
-            shape_param = resulting_params[1]
-    else:
-        #TODO: handle failure here
-
+            result[0] = resulting_params[0]
+            result[1] = resulting_params[1]
+    return result
 
 def gpd_loglikelihood_factory(price_data):
     """
@@ -142,3 +175,5 @@ optimized_both = op.minimize(test_both, [1, 1], method='Nelder-Mead')
 print(optimized_scale_only)
 print(optimized_scale_and_shape)
 print(optimized_both)
+
+print(gpd_var_estimator_aligned(mixed_returns))
