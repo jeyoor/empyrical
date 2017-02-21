@@ -150,7 +150,6 @@ def gpd_loglikelihood_scale_and_shape_factory(price_data):
     #we are expecting the lambda below to be called as follows:
     #parameters = [scale, shape]
     #the final outer negative is added because scipy only minimizes, not maximizes
-    #TODO: simplify this lambda with helper methods
     return lambda params: -gpd_loglikelihood_scale_and_shape( params[0], params[1], price_data) 
 
 def gpd_loglikelihood_scale_and_shape(scale, shape, price_data):
@@ -227,3 +226,24 @@ print('Weekly:',gpd_var_estimator_aligned(weekly_returns))
 print('Monthly:',gpd_var_estimator_aligned(monthly_returns))
 print('One return:',gpd_var_estimator_aligned(one_return))
 print('Empty returns:',gpd_var_estimator_aligned(empty_returns))
+
+
+
+#>>> print('Simple:',gpd_var_estimator_aligned(simple_benchmark))
+#Simple: [0, 0, 0, 0]
+#>>> print('Positive:',gpd_var_estimator_aligned(positive_returns))
+#Positive: [0, 0, 0, 0]
+#>>> print('Negative:',gpd_var_estimator_aligned(negative_returns))
+#Negative: [0.025, 0.068353586736348199, 9.4304947982121171e-07, 0.31206547376799765, 0.38041939568242211]
+#>>> print('Mixed:',gpd_var_estimator_aligned(mixed_returns))
+#Mixed: [0.05, 0.10001255835838491, 1.5657360018514067e-06, 0.29082525469237713, 0.39083834671363232]
+#>>> print('Flat Line 1:',gpd_var_estimator_aligned(flat_line_1))
+#Flat Line 1: [0, 0, 0, 0]
+#>>> print('Weekly:',gpd_var_estimator_aligned(weekly_returns))
+#Weekly: [0.05, 0.10001255835838491, 1.5657360018514067e-06, 0.29082525469237713, 0.39083834671363232]
+#>>> print('Monthly:',gpd_var_estimator_aligned(monthly_returns))
+#Monthly: [0.05, 0.10001255835838491, 1.5657360018514067e-06, 0.29082525469237713, 0.39083834671363232]
+#>>> print('One return:',gpd_var_estimator_aligned(one_return))
+#One return: [0, 0, 0, 0]
+#>>> print('Empty returns:',gpd_var_estimator_aligned(empty_returns))
+#Empty returns: [0, 0, 0, 0]

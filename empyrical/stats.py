@@ -1186,6 +1186,159 @@ Tail Risks: Application to Stress Testing <https://www.imf.org/external/pubs/ft/
 
     return heuristic 
 
+
+def gpd_risk_estimates(returns, var_p=0.01):
+    """
+    Estimate VaR and ES using the Generalized Pareto Distribution (GPD)
+
+    seealso::
+    
+    `An Application of Extreme Value Theory for
+Measuring Risk <https://link.springer.com/article/10.1007/s10614-006-9025-7>`
+        A paper describing how to use the Generalized Pareto Distribution to estimate VaR and ES.
+
+    Parameters
+    ----------
+    returns : pd.Series or np.ndarray
+        Daily returns of the strategy, noncumulative.
+        - See full explanation in :func:`~empyrical.stats.cum_returns`.
+    var_p : float
+        The percentile to use for estimating the VaR and ES
+
+    Returns
+    -------
+    [threshold, scale_param, shape_param, var_estimate, es_estimate] : list[float]
+        threshold - the threshold use to cut off exception tail losses
+        scale_param - a parameter (often denoted by sigma) 
+        shape_param - a parameter ()
+        var_estimate - an estimate for the VaR for the given percentile
+        es_estimate - an estimate for the ES for the given percentile
+    """
+    if len(returns) < 3:
+        return np.nan
+    return gpd_risk_estimates_aligned(*_aligned_series(returns, var_p))
+
+def gpd_risk_estimates_aligned(returns, var_p=0.01):
+    """
+    Estimate VaR and ES using the Generalized Pareto Distribution (GPD)
+
+    seealso::
+    
+    `An Application of Extreme Value Theory for
+Measuring Risk <https://link.springer.com/article/10.1007/s10614-006-9025-7>`
+        A paper describing how to use the Generalized Pareto Distribution to estimate VaR and ES.
+
+    Parameters
+    ----------
+    returns : pd.Series or np.ndarray
+        Daily returns of the strategy, noncumulative.
+        - See full explanation in :func:`~empyrical.stats.cum_returns`.
+    var_p : float
+        The percentile to use for estimating the VaR and ES
+
+    Returns
+    -------
+    [threshold, scale_param, shape_param, var_estimate, es_estimate] : list[float]
+        threshold - the threshold use to cut off exception tail losses
+        scale_param - a parameter (often denoted by sigma) 
+        shape_param - a parameter ()
+        var_estimate - an estimate for the VaR for the given percentile
+        es_estimate - an estimate for the ES for the given percentile
+    """
+    if len(returns) < 3:
+        return np.nan
+
+    DEFAULT_THRESHOLD = 0.2
+    MINIMUM_THRESHOLD = 0.000000001
+    returns_array = pd.Series(returns).as_matrix()
+    flipped_returns = -1*returns_array
+    filtered_returns = flipped_returns[flipped_returns>0]
+    threshold = DEFAULT_THRESHOLD
+    finished = False
+    scale_param = 0
+    shape_param = 0
+    result = np.array([0, 0, 0, 0])
+    while not finished and threshold > MINIMUM_THRESHOLD:
+        iteration_returns = filtered_returns[filtered_returns>=threshold]
+        param_result = gpd_loglikelihood_minimizer_aligned(iteration_returns)
+        if (param_result[0] != False and param_result[1] != False):
+            scale_param = param_result[0]
+            shape_param = param_result[1]
+            #non-negative shape parameter is required for fat tails
+            if (shape_param > 0):
+                finished = True
+        threshold = threshold / 2
+    if (finished):
+        var_estimate = gpd_var_calculator(threshold, scale_param, shape_param, var_p, len(returns_array), len(iteration_returns)) 
+        es_estimate = gpd_es_calculator(var_estimate, threshold, scale_param, shape_param)
+        result = np.array([threshold, scale_param, shape_param, var_estimate, es_estimate])
+    return result
+
+def gpd_es_calculator(var_estimate, threshold, scale_param, shape_param):
+    result = 0
+    if ((1 - shape_param) != 0):
+        result = (var_estimate/(1-shape_param))+((scale_param-(shape_param*threshold))/(1-shape_param))
+    return result
+
+def gpd_var_calculator(threshold, scale_param, shape_param, probability, total_n, exceedance_n):
+    result = 0
+    if (exceedance_n > 0 and shape_param > 0):
+        result = threshold+((scale_param/shape_param)*(math.pow((total_n/exceedance_n)*probability, -shape_param)-1))
+    return result
+
+def gpd_loglikelihood_minimizer_aligned(price_data):
+    result = [False, False]
+    DEFAULT_SCALE_PARAM = 1
+    DEFAULT_SHAPE_PARAM = 1
+    if (len(price_data) > 0):
+        gpd_loglikelihood_lambda = gpd_loglikelihood_factory(price_data)
+        optimization_results = op.minimize(gpd_loglikelihood_lambda, [DEFAULT_SCALE_PARAM, DEFAULT_SHAPE_PARAM], method='Nelder-Mead')
+        if optimization_results.success:
+            resulting_params = optimization_results.x
+            if len(resulting_params) == 2:
+                result[0] = resulting_params[0]
+                result[1] = resulting_params[1]
+    return result
+
+def gpd_loglikelihood_factory(price_data):
+    return lambda params: gpd_loglikelihood(params, price_data)
+
+def gpd_loglikelihood(params, price_data):
+    if (params[1] != 0):
+        return -gpd_loglikelihood_scale_and_shape(params[0], params[1], price_data)
+    else:
+        return -gpd_loglikelihood_scale_only(params[0], price_data)
+
+def gpd_loglikelihood_scale_and_shape_factory(price_data):
+    n = len(price_data)
+    #minimize a function of two variables requires a list of params
+    #we are expecting the lambda below to be called as follows:
+    #parameters = [scale, shape]
+    #the final outer negative is added because scipy only minimizes, not maximizes
+    return lambda params: -gpd_loglikelihood_scale_and_shape( params[0], params[1], price_data) 
+
+def gpd_loglikelihood_scale_and_shape(scale, shape, price_data):
+    n = len(price_data)
+    result = -1 * sys.float_info.max
+    if (scale != 0):
+        param_factor = shape / scale
+        if (shape != 0 and param_factor >= 0 and scale >= 0):
+            result = ((-n * np.log(scale))-(((1 / shape) + 1) * (np.log((shape / scale * price_data) + 1)).sum()))
+    return result
+
+def gpd_loglikelihood_scale_only_factory(price_data):
+    #the negative is added because scipy only minimizes and we want to maximize
+    return lambda scale: -gpd_loglikelihood_scale_only(scale, price_data) 
+
+def gpd_loglikelihood_scale_only(scale, price_data):
+    n = len(price_data)
+    data_sum = price_data.sum()
+    result = -1 * sys.float_info.max
+    if (scale >= 0):
+        result = ((-n*np.log(scale)) - (data_sum/scale))
+    return result
+
+
 SIMPLE_STAT_FUNCS = [
     cum_returns_final,
     annual_return,
@@ -1201,6 +1354,7 @@ SIMPLE_STAT_FUNCS = [
     tail_ratio,
     cagr,
     beta_fragility_heuristic,
+    gpd_risk_estimates,
 ]
 
 FACTOR_STAT_FUNCS = [

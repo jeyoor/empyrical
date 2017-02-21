@@ -1002,6 +1002,20 @@ class TestStats(TestCase):
             expected,
             DECIMAL_PLACES)
 
+    #regression tests for beta_fragility_heuristic
+    @parameterized.expand([
+        (simple_benchmark, [0, 0, 0, 0]),
+        (positive_returns, [0, 0, 0, 0]),
+        #TODO: add more expected results here
+    ])
+    def test_gpd_risk_estimates(self, returns, expected):
+        result = self.empyrical.gpd_risk_estimates(returns)
+        for result_item, expected_item in zip(result, expected):
+            assert_almost_equal(
+                result_item,
+                expected_item,
+                DECIMAL_PLACES)
+
     @property
     def empyrical(self):
         """
@@ -1184,7 +1198,7 @@ class PassArraysEmpyricalProxy(ConvertPandasEmpyricalProxy):
     functions to numpy arrays.
 
     Calls the underlying
-    empyrical.[alpha|beta|alpha_beta]_aligned functions directly, instead of
+    empyrical.[alpha|beta|alpha_beta|...]_aligned functions directly, instead of
     the wrappers which align Series first.
 
     """
@@ -1194,7 +1208,7 @@ class PassArraysEmpyricalProxy(ConvertPandasEmpyricalProxy):
         )
 
     def __getattr__(self, item):
-        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic'):
+        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic', 'gpd_risk_estimates'):
             item += '_aligned'
 
         return super(PassArraysEmpyricalProxy, self).__getattr__(item)

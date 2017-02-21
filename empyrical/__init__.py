@@ -42,6 +42,8 @@ from .stats import (
     cagr,
     beta_fragility_heuristic,
     beta_fragility_heuristic_aligned,
+    gpd_risk_estimates,
+    gpd_risk_estimates_aligned,
     DAILY,
     WEEKLY,
     MONTHLY,
