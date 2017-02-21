@@ -1002,14 +1002,18 @@ class TestStats(TestCase):
             expected,
             DECIMAL_PLACES)
 
-    #regression tests for beta_fragility_heuristic
+    #regression tests for gpd_risk_estimates
     @parameterized.expand([
-        (simple_benchmark, [0, 0, 0, 0]),
-        (positive_returns, [0, 0, 0, 0]),
+        (simple_benchmark, pd.Series([0, 0, 0, 0])),
+        (positive_returns, pd.Series([0, 0, 0, 0])),
         #TODO: add more expected results here
     ])
     def test_gpd_risk_estimates(self, returns, expected):
-        result = self.empyrical.gpd_risk_estimates(returns)
+#        assert_almost_equal(
+#            self.empyrical.gpd_risk_estimates_aligned(returns),
+#            expected,
+#            DECIMAL_PLACES)
+        result = self.empyrical.gpd_risk_estimates_aligned(returns)
         for result_item, expected_item in zip(result, expected):
             assert_almost_equal(
                 result_item,
@@ -1208,7 +1212,7 @@ class PassArraysEmpyricalProxy(ConvertPandasEmpyricalProxy):
         )
 
     def __getattr__(self, item):
-        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic', 'gpd_risk_estimates'):
+        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic', 'gpd_risk_estimates',):
             item += '_aligned'
 
         return super(PassArraysEmpyricalProxy, self).__getattr__(item)

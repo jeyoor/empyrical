@@ -1257,7 +1257,7 @@ Measuring Risk <https://link.springer.com/article/10.1007/s10614-006-9025-7>`
     finished = False
     scale_param = 0
     shape_param = 0
-    result = np.array([0, 0, 0, 0])
+    result = pd.Series([0.0, 0.0, 0.0, 0.0])
     while not finished and threshold > MINIMUM_THRESHOLD:
         iteration_returns = filtered_returns[filtered_returns>=threshold]
         param_result = gpd_loglikelihood_minimizer_aligned(iteration_returns)
@@ -1271,7 +1271,7 @@ Measuring Risk <https://link.springer.com/article/10.1007/s10614-006-9025-7>`
     if (finished):
         var_estimate = gpd_var_calculator(threshold, scale_param, shape_param, var_p, len(returns_array), len(iteration_returns)) 
         es_estimate = gpd_es_calculator(var_estimate, threshold, scale_param, shape_param)
-        result = np.array([threshold, scale_param, shape_param, var_estimate, es_estimate])
+        result = pd.Series([threshold, scale_param, shape_param, var_estimate, es_estimate])
     return result
 
 def gpd_es_calculator(var_estimate, threshold, scale_param, shape_param):
