@@ -1002,17 +1002,24 @@ class TestStats(TestCase):
             expected,
             DECIMAL_PLACES)
 
+
+    mixed_returns_expected_gpd_risk_result = [0.05, 0.10001255835838491, 1.5657360018514067e-06, 0.29082525469237713, 0.39083834671363232]
+
+    negative_returns_expected_gpd_risk_result = [0.025, 0.068353586736348199, 9.4304947982121171e-07, 0.31206547376799765, 0.38041939568242211]
+
     #regression tests for gpd_risk_estimates
     @parameterized.expand([
-        (simple_benchmark, pd.Series([0, 0, 0, 0])),
-        (positive_returns, pd.Series([0, 0, 0, 0])),
-        #TODO: add more expected results here
+        (one_return, [0, 0, 0, 0]),
+        (empty_returns, [0, 0, 0, 0]),
+        (simple_benchmark, [0, 0, 0, 0]),
+        (positive_returns, [0, 0, 0, 0]),
+        (negative_returns, negative_returns_expected_gpd_risk_result),
+        (mixed_returns, mixed_returns_expected_gpd_risk_result),
+        (flat_line_1, [0, 0, 0, 0]),
+        (weekly_returns, mixed_returns_expected_gpd_risk_result),
+        (monthly_returns, mixed_returns_expected_gpd_risk_result),
     ])
     def test_gpd_risk_estimates(self, returns, expected):
-#        assert_almost_equal(
-#            self.empyrical.gpd_risk_estimates_aligned(returns),
-#            expected,
-#            DECIMAL_PLACES)
         result = self.empyrical.gpd_risk_estimates_aligned(returns)
         for result_item, expected_item in zip(result, expected):
             assert_almost_equal(
